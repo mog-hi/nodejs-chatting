@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf8" />
+  <title>Mobile Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+  <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+  <script src=”https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js”> </script> 
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    window.onload = function () {
+      // 변수를 선언합니다.
+      var room = prompt('방 이름을 입력하세요.', '');
+      var socket = io.connect();
+      // 소켓 이벤트를 연결합니다.
+      socket.emit('join', room);
+
+      socket.on('message', function (data) {
+        // $('<p>' + data.message + '</p>').appendTo('body');
+        var output = '';
+        output += '<li>';
+        output += '    <h3>' + data.name + '</h3>';
+        output += '    <p>' + data.message + '</p>';
+        output += '    <p>' + data.date + '</p>';
+        output += '</li>';
+
+        // 객체 추가
+        $(output).prependTo('#content');
+        $('#content').listview('refresh');
+      });
+      function readURL(input) {
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            $('#blah').attr('src', e.target.result);
+          }
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+      $('#button').click(function () {
+        socket.emit('message', {
+          name: $('#name').val(),
+          message: $('#message').val(),
+
+          date: new Date().toUTCString()
+        });
+      });
+      
+      socket.on('image', function (data) {
+        var output = '';
+        output += '<li>';
+        output += '    <h3>' + data.name + '</h3>';
+        output += '    <img src =' + data.message + ' height = 200px width = 200px>';
+        // 이때 이미지가 깨지는 이유: 127.0.0.1:52273 + data.message로 접속된다.
+        // s3를 사용해서 s3주소를 날라오게 하면 가능하다. 
+
+        output += '    <p>' + data.date + '</p>';
+        output += '</li>';
+       
+        // 객체 추가
+        $(output).prependTo('#content');
+        $('#content').listview('refresh');
+      });
+
+      $(function(){
+        $('#uploadBtn').on('click', function(){
+        uploadFile();
+        });
+      });
+
+      function uploadFile(){
+        var form = $('#uploadForm')[0];
+        var formData = new FormData();
+        formData.append("image", $("input[name=test]")[0].files[0]);
+        var obj = {formData}
+        $.ajax({
+          url : 'http://127.0.0.1:52273/image',
+          type : 'POST',
+          method: "POST",
+          timeout: 0,
+          processData: false,
+          mimeType: "multipart/form-data",
+          contentType: false,
+          data: formData,
+         
+          success: function (data) {
+            socket.emit('image', {
+              name: $('#name').val(),
+              message: data,
+              date: new Date().toUTCString()
+            });
+            alert("complete");
+            $("#btnSubmit").prop("disabled", false);
+          },
+          error: function (e) {
+            console.log("ERROR : ", e);
+            $("#btnSubmit").prop("disabled", false);
+            alert("fail");
+          }
+        }).done(function(data){
+          callback(data);
+        });
+        $.submit();
+      }
+
+    };
+  </script>
+</head>
+
+<body>
+  
+  <div data-role="page">
+    <div data-role="header">
+      <h1>Socket.io Chat</h1>
+    </div>
+    <div data-role="content">
+      <h3>Nick Name</h3>
+      <input id="name" />
+      <a data-role="button" href="#chatpage">Start Chat</a>
+     
+  
+    </div>
+  </div>
+  <div data-role="page" id="chatpage">
+    <div data-role="header">
+      <h1>Socket.io Chat</h1>
+    </div>
+    <div data-role="content">
+      <!-- 메세지 입력 -->
+      <input id="message" />
+      <button id='button'>Button</button>
+      <!-- 사진 업로드 -->
+      <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <input type="file" name="test" id="test"/>
+        <button type="button" id="uploadBtn">Save</button>
+      </form>
+      <!-- 전송한 내용이 출력될 위치 -->
+      <ul id="content" data-role="listview" data-inset="true"></ul>
+    </div>
+  </div>  
+</body>
+
+</html>
