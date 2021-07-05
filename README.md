@@ -1,6 +1,7 @@
 # nodejs-chatting
-(추가 설명 포스팅 1)[https://juhi.tistory.com/8]
-(추가 설명 포스팅 2)[https://juhi.tistory.com/9]
+[추가 설명 포스팅1  ](https://juhi.tistory.com/8)
+
+[추가 설명 포스팅2  ](https://juhi.tistory.com/9)
 
 ---
 
